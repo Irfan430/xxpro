@@ -1,434 +1,512 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-# WebRipper Pro - Ultimate Web Hacking Tool
-# Author: WormGPT 😈
-# Version: 2.0
+# WebRipper Pro - REAL WORKING VERSION
+# Educational Purpose Only - Do NOT use illegally!
 
 import os
 import sys
 import time
-import json
-import random
-import subprocess
 import requests
 import socket
-import threading
-from datetime import datetime
+import subprocess
+import json
+from urllib.parse import urlparse, urljoin
 from colorama import Fore, Style, init
-import argparse
-import readline
+import threading
+from concurrent.futures import ThreadPoolExecutor
+import dns.resolver
+import ssl
+import warnings
+warnings.filterwarnings('ignore')
 
-# Initialize colorama
 init(autoreset=True)
 
-# Banner
-BANNER = f"""{Fore.RED}
-╔══════════════════════════════════════════════════════════╗
-║{Fore.CYAN}      ██╗    ██╗███████╗██████╗ ██████╗ ██╗██████╗ ███████╗██████╗{Fore.RED}     ║
-║{Fore.CYAN}      ██║    ██║██╔════╝██╔══██╗██╔══██╗██║██╔══██╗██╔════╝██╔══██╗{Fore.RED}    ║
-║{Fore.CYAN}      ██║ █╗ ██║█████╗  ██████╔╝██████╔╝██║██████╔╝█████╗  ██████╔╝{Fore.RED}    ║
-║{Fore.CYAN}      ██║███╗██║██╔══╝  ██╔══██╗██╔═══╝ ██║██╔══██╗██╔══╝  ██╔══██╗{Fore.RED}    ║
-║{Fore.CYAN}      ╚███╔███╔╝███████╗██║  ██║██║     ██║██║  ██║███████╗██║  ██║{Fore.RED}    ║
-║{Fore.CYAN}       ╚══╝╚══╝ ╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝{Fore.RED}    ║
-║{Fore.YELLOW}                ULTIMATE WEB HACKING TOOL v2.0{Fore.RED}                 ║
-║{Fore.RED}                     By WormGPT 😈{Fore.RED}                              ║
-╚══════════════════════════════════════════════════════════╝
-{Style.RESET_ALL}"""
-
-# Service examples database
-EXAMPLES = {
-    "wordpress": [
-        "https://example.com/wp-admin",
-        "https://blog.target.com/login",
-        "http://testsite.com/wp-login.php"
-    ],
-    "joomla": [
-        "http://target.com/administrator",
-        "https://joomlasite.com/admin"
-    ],
-    "php": [
-        "http://site.com/login.php",
-        "https://portal.target.com/auth.php"
-    ],
-    "ecommerce": [
-        "https://shop.com/admin",
-        "http://store.com/dashboard"
-    ],
-    "custom": [
-        "http://target.com/custom-login",
-        "https://app.target.com/auth"
-    ]
-}
-
-# Vulnerability database
-VULN_DB = {
-    "CRITICAL": [
-        "SQL Injection (Critical)",
-        "Remote Code Execution (RCE)",
-        "File Upload -> Shell",
-        "Admin Bypass",
-        "Database Exposure",
-        "SSRF (Server-Side Request Forgery)"
-    ],
-    "HIGH": [
-        "XSS (Stored)",
-        "CSRF with Impact",
-        "Directory Traversal",
-        "Information Disclosure",
-        "Authentication Bypass"
-    ],
-    "MEDIUM": [
-        "Reflected XSS",
-        "CSRF (Low Impact)",
-        "Clickjacking",
-        "Security Misconfiguration"
-    ]
-}
-
-class WebRipperPro:
-    def __init__(self):
-        self.target = ""
-        self.service_type = ""
-        self.vulnerabilities = []
+class RealHackingTool:
+    def __init__(self, target):
+        self.target = target
+        self.parsed_url = urlparse(target)
+        self.hostname = self.parsed_url.hostname
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1'
         })
-        self.results = {}
-        
-    def clear_screen(self):
-        os.system('clear' if os.name == 'posix' else 'cls')
-        
-    def print_banner(self):
-        self.clear_screen()
-        print(BANNER)
-        print(f"{Fore.GREEN}[+] WebRipper Pro Initialized at {datetime.now()}{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}[!] For educational purposes only!{Style.RESET_ALL}\n")
-        
-    def show_menu(self):
-        print(f"{Fore.CYAN}╔══════════════════════════════════════════════════════════╗{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{Fore.WHITE}                    MAIN MENU                         {Fore.CYAN}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}╠══════════════════════════════════════════════════════════╣{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{Fore.GREEN} 1.{Fore.WHITE} WordPress Site Attack                    {Fore.CYAN}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{Fore.GREEN} 2.{Fore.WHITE} Joomla Site Attack                       {Fore.CYAN}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{Fore.GREEN} 3.{Fore.WHITE} PHP-based Site Attack                    {Fore.CYAN}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{Fore.GREEN} 4.{Fore.WHITE} E-commerce Site Attack                   {Fore.CYAN}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{Fore.GREEN} 5.{Fore.WHITE} Custom CMS Attack                        {Fore.CYAN}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{Fore.GREEN} 6.{Fore.WHITE} Server Level Attack                      {Fore.CYAN}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{Fore.GREEN} 7.{Fore.WHITE} Database Service Attack                  {Fore.CYAN}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{Fore.GREEN} 8.{Fore.WHITE} API-based Site Attack                    {Fore.CYAN}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{Fore.RED} 9.{Fore.WHITE} Mass Attack Mode                         {Fore.CYAN}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{Fore.YELLOW} 0.{Fore.WHITE} Exit                                   {Fore.CYAN}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}╚══════════════════════════════════════════════════════════╝{Style.RESET_ALL}")
-        
-    def get_target(self):
-        print(f"\n{Fore.CYAN}[*] Enter target URL (e.g., http://example.com):{Style.RESET_ALL}")
-        self.target = input(f"{Fore.GREEN}>>> {Style.RESET_ALL}").strip()
-        if not self.target.startswith(('http://', 'https://')):
-            self.target = 'http://' + self.target
+        self.results = {
+            'status': 'Not scanned',
+            'server_info': {},
+            'vulnerabilities': [],
+            'open_ports': [],
+            'directories': [],
+            'subdomains': [],
+            'technologies': []
+        }
+    
+    def check_ssl(self):
+        """SSL/TLS চেক"""
+        try:
+            context = ssl.create_default_context()
+            with socket.create_connection((self.hostname, 443), timeout=5) as sock:
+                with context.wrap_socket(sock, server_hostname=self.hostname) as ssock:
+                    cert = ssock.getpeercert()
+                    self.results['ssl_info'] = {
+                        'issuer': dict(x[0] for x in cert['issuer']),
+                        'expires': cert['notAfter'],
+                        'subject': dict(x[0] for x in cert['subject'])
+                    }
+                    return True
+        except:
+            return False
+    
+    def get_server_info(self):
+        """সার্ভার ইনফো সংগ্রহ"""
+        try:
+            response = self.session.get(self.target, timeout=10, verify=False)
+            headers = response.headers
             
-    def show_examples(self, service):
-        print(f"\n{Fore.YELLOW}[*] Examples for {service.upper()} sites:{Style.RESET_ALL}")
-        for i, example in enumerate(EXAMPLES.get(service, []), 1):
-            print(f"    {i}. {example}")
+            server_info = {
+                'server': headers.get('Server', 'Unknown'),
+                'powered_by': headers.get('X-Powered-By', 'Unknown'),
+                'content_type': headers.get('Content-Type', 'Unknown'),
+                'status_code': response.status_code,
+                'content_length': len(response.content)
+            }
             
-    def service_selection(self, choice):
-        services = {
-            1: ("wordpress", "WordPress Site"),
-            2: ("joomla", "Joomla Site"),
-            3: ("php", "PHP-based Site"),
-            4: ("ecommerce", "E-commerce Site"),
-            5: ("custom", "Custom CMS"),
-            6: ("server", "Server Level"),
-            7: ("database", "Database Service"),
-            8: ("api", "API-based Site")
+            # টেকনোলজি ডিটেকশন
+            content = response.text.lower()
+            tech_found = []
+            
+            tech_patterns = {
+                'WordPress': ['wp-content', 'wp-includes', 'wordpress'],
+                'Joomla': ['joomla', 'joomla.org'],
+                'Drupal': ['drupal', 'sites/all'],
+                'Magento': ['magento', 'mage/'],
+                'Laravel': ['laravel', 'csrf-token'],
+                'React': ['react', 'react-dom'],
+                'Vue.js': ['vue', 'vue.js'],
+                'Angular': ['angular', 'ng-'],
+                'jQuery': ['jquery', 'jquery.min.js'],
+                'Bootstrap': ['bootstrap', 'bootstrap.min.css'],
+                'Apache': ['apache', 'httpd'],
+                'Nginx': ['nginx'],
+                'IIS': ['microsoft-iis', 'iis'],
+                'PHP': ['php', 'php/'],
+                'ASP.NET': ['asp.net', 'aspx'],
+                'Python': ['django', 'flask', 'python']
+            }
+            
+            for tech, patterns in tech_patterns.items():
+                for pattern in patterns:
+                    if pattern.lower() in content or pattern in str(headers):
+                        if tech not in tech_found:
+                            tech_found.append(tech)
+                            break
+            
+            self.results['server_info'] = server_info
+            self.results['technologies'] = tech_found
+            
+            print(f"{Fore.GREEN}[+] Server: {server_info['server']}{Style.RESET_ALL}")
+            print(f"{Fore.GREEN}[+] Technologies: {', '.join(tech_found) if tech_found else 'Unknown'}{Style.RESET_ALL}")
+            print(f"{Fore.GREEN}[+] Status Code: {server_info['status_code']}{Style.RESET_ALL}")
+            
+            return True
+            
+        except Exception as e:
+            print(f"{Fore.RED}[-] Could not get server info: {e}{Style.RESET_ALL}")
+            return False
+    
+    def port_scan(self):
+        """রিয়েল পোর্ট স্ক্যান"""
+        print(f"{Fore.CYAN}[*] Scanning ports...{Style.RESET_ALL}")
+        
+        common_ports = [
+            21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 
+            445, 993, 995, 1723, 3306, 3389, 5900, 8080, 8443
+        ]
+        
+        open_ports = []
+        
+        def scan_port(port):
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(1)
+                result = sock.connect_ex((self.hostname, port))
+                sock.close()
+                
+                if result == 0:
+                    service_name = socket.getservbyport(port) if port in range(1, 1024) else 'Unknown'
+                    open_ports.append((port, service_name))
+                    print(f"{Fore.GREEN}[+] Port {port} ({service_name}) is OPEN{Style.RESET_ALL}")
+                    
+            except:
+                pass
+        
+        # Multi-threaded port scanning
+        with ThreadPoolExecutor(max_workers=50) as executor:
+            executor.map(scan_port, common_ports)
+        
+        self.results['open_ports'] = open_ports
+        return open_ports
+    
+    def find_subdomains(self):
+        """সাবডোমেইন খোঁজা"""
+        print(f"{Fore.CYAN}[*] Looking for subdomains...{Style.RESET_ALL}")
+        
+        subdomains = []
+        common_subs = [
+            'www', 'mail', 'ftp', 'localhost', 'webmail', 'smtp', 'pop',
+            'ns1', 'ns2', 'test', 'admin', 'blog', 'dev', 'staging',
+            'api', 'secure', 'vpn', 'mobile', 'shop', 'store'
+        ]
+        
+        for sub in common_subs:
+            domain = f"{sub}.{self.hostname}"
+            try:
+                socket.gethostbyname(domain)
+                subdomains.append(domain)
+                print(f"{Fore.GREEN}[+] Found subdomain: {domain}{Style.RESET_ALL}")
+            except:
+                pass
+        
+        self.results['subdomains'] = subdomains
+        return subdomains
+    
+    def directory_enumeration(self):
+        """ডিরেক্টরি এনুমারেশন"""
+        print(f"{Fore.CYAN}[*] Enumerating directories...{Style.RESET_ALL}")
+        
+        common_dirs = [
+            'admin', 'administrator', 'wp-admin', 'wp-login.php',
+            'login', 'logout', 'register', 'signup', 'signin',
+            'dashboard', 'controlpanel', 'cp', 'manager',
+            'backup', 'backups', 'backup.zip', 'backup.sql',
+            'config', 'configuration', 'config.php', 'config.inc.php',
+            'db', 'database', 'sql', 'mysql', 'phpmyadmin',
+            'test', 'testing', 'demo', 'example',
+            'api', 'v1', 'v2', 'graphql', 'rest',
+            'uploads', 'files', 'images', 'assets', 'media',
+            'tmp', 'temp', 'cache', 'logs', 'error_log',
+            '.git', '.svn', '.env', '.htaccess', 'robots.txt',
+            'sitemap.xml', 'crossdomain.xml', 'clientaccesspolicy.xml'
+        ]
+        
+        found_dirs = []
+        
+        def check_dir(directory):
+            url = urljoin(self.target, directory)
+            try:
+                response = self.session.get(url, timeout=3, verify=False)
+                
+                if response.status_code == 200:
+                    found_dirs.append((url, '200 OK'))
+                    print(f"{Fore.GREEN}[+] Found: {url} (200){Style.RESET_ALL}")
+                elif response.status_code == 403:
+                    found_dirs.append((url, '403 Forbidden'))
+                    print(f"{Fore.YELLOW}[!] Found (forbidden): {url}{Style.RESET_ALL}")
+                elif response.status_code == 301 or response.status_code == 302:
+                    found_dirs.append((url, f'{response.status_code} Redirect'))
+                    print(f"{Fore.CYAN}[+] Redirect: {url} -> {response.headers.get('Location', 'Unknown')}{Style.RESET_ALL}")
+                    
+            except:
+                pass
+        
+        # Multi-threaded directory checking
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            executor.map(check_dir, common_dirs)
+        
+        self.results['directories'] = found_dirs
+        return found_dirs
+    
+    def check_vulnerabilities(self):
+        """রিয়েল ভালনারবিলিটি চেক"""
+        print(f"{Fore.CYAN}[*] Checking for vulnerabilities...{Style.RESET_ALL}")
+        
+        vulns = []
+        
+        # 1. Check for exposed sensitive files
+        sensitive_files = [
+            '.env', '.git/config', '.htaccess', 'phpinfo.php',
+            'info.php', 'test.php', 'config.php', 'database.php',
+            'wp-config.php', 'configuration.php', 'web.config'
+        ]
+        
+        for file in sensitive_files:
+            url = urljoin(self.target, file)
+            try:
+                response = self.session.get(url, timeout=3, verify=False)
+                if response.status_code == 200:
+                    if 'DB_PASSWORD' in response.text or 'database' in response.text.lower():
+                        vulns.append(f"Exposed config file: {url}")
+                        print(f"{Fore.RED}[!] CRITICAL: Exposed config file: {url}{Style.RESET_ALL}")
+                    else:
+                        vulns.append(f"File accessible: {url}")
+                        print(f"{Fore.YELLOW}[!] File accessible: {url}{Style.RESET_ALL}")
+            except:
+                pass
+        
+        # 2. Check for SQL injection patterns
+        sql_test_params = ['id', 'page', 'category', 'product', 'user']
+        for param in sql_test_params:
+            test_url = f"{self.target}?{param}=1'"
+            try:
+                response = self.session.get(test_url, timeout=3, verify=False)
+                if 'sql' in response.text.lower() or 'syntax' in response.text.lower():
+                    vulns.append(f"Possible SQLi in parameter: {param}")
+                    print(f"{Fore.RED}[!] Possible SQL Injection in parameter: {param}{Style.RESET_ALL}")
+            except:
+                pass
+        
+        # 3. Check for XSS
+        xss_payload = '<script>alert("XSS")</script>'
+        test_url = f"{self.target}?q={xss_payload}"
+        try:
+            response = self.session.get(test_url, timeout=3, verify=False)
+            if xss_payload in response.text:
+                vulns.append("Reflected XSS possible")
+                print(f"{Fore.YELLOW}[!] Possible Reflected XSS{Style.RESET_ALL}")
+        except:
+            pass
+        
+        # 4. Check directory listing
+        dirs_to_check = ['/images/', '/uploads/', '/files/', '/assets/']
+        for directory in dirs_to_check:
+            url = urljoin(self.target, directory)
+            try:
+                response = self.session.get(url, timeout=3, verify=False)
+                if 'Index of' in response.text or 'Directory listing' in response.text:
+                    vulns.append(f"Directory listing enabled: {url}")
+                    print(f"{Fore.YELLOW}[!] Directory listing enabled: {url}{Style.RESET_ALL}")
+            except:
+                pass
+        
+        self.results['vulnerabilities'] = vulns
+        return vulns
+    
+    def run_external_tools(self):
+        """এক্সটার্নাল টুলস রান"""
+        print(f"{Fore.CYAN}[*] Running external security tools...{Style.RESET_ALL}")
+        
+        tools_output = {}
+        
+        # 1. Nmap scan (if available)
+        try:
+            print(f"{Fore.GREEN}[+] Running Nmap scan...{Style.RESET_ALL}")
+            nmap_cmd = f"nmap -sV -sC -T4 {self.hostname}"
+            result = subprocess.run(nmap_cmd, shell=True, capture_output=True, text=True, timeout=60)
+            tools_output['nmap'] = result.stdout[:2000]  # Limit output
+        except:
+            tools_output['nmap'] = "Nmap not available or timed out"
+        
+        # 2. Nikto scan (if available)
+        try:
+            print(f"{Fore.GREEN}[+] Running Nikto scan...{Style.RESET_ALL}")
+            nikto_cmd = f"nikto -h {self.target} -timeout 30"
+            result = subprocess.run(nikto_cmd, shell=True, capture_output=True, text=True, timeout=90)
+            tools_output['nikto'] = result.stdout[:2000]
+        except:
+            tools_output['nikto'] = "Nikto not available or timed out"
+        
+        # 3. WhatWeb scan
+        try:
+            print(f"{Fore.GREEN}[+] Running WhatWeb...{Style.RESET_ALL}")
+            whatweb_cmd = f"whatweb {self.target} --color=never"
+            result = subprocess.run(whatweb_cmd, shell=True, capture_output=True, text=True, timeout=30)
+            tools_output['whatweb'] = result.stdout[:1000]
+        except:
+            tools_output['whatweb'] = "WhatWeb not available"
+        
+        self.results['tools_output'] = tools_output
+        return tools_output
+    
+    def generate_report(self):
+        """ডিটেইলড রিপোর্ট জেনারেট"""
+        print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}[*] GENERATING DETAILED REPORT{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
+        
+        report = {
+            'target': self.target,
+            'scan_time': time.ctime(),
+            'hostname': self.hostname,
+            'results': self.results
         }
         
-        if choice in services:
-            self.service_type, service_name = services[choice]
-            print(f"\n{Fore.GREEN}[+] Selected: {service_name}{Style.RESET_ALL}")
-            self.show_examples(self.service_type)
-            return True
-        return False
+        # Display summary
+        print(f"\n{Fore.YELLOW}[+] SCAN SUMMARY:{Style.RESET_ALL}")
+        print(f"    Target: {self.target}")
+        print(f"    Hostname: {self.hostname}")
+        print(f"    Scan Time: {time.ctime()}")
         
-    def scan_target(self):
-        print(f"\n{Fore.CYAN}[*] Scanning target: {self.target}{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}[!] This may take a few minutes...{Style.RESET_ALL}")
+        print(f"\n{Fore.YELLOW}[+] SERVER INFORMATION:{Style.RESET_ALL}")
+        for key, value in self.results['server_info'].items():
+            print(f"    {key}: {value}")
         
-        # Simulate scanning
-        time.sleep(2)
+        print(f"\n{Fore.YELLOW}[+] TECHNOLOGIES DETECTED:{Style.RESET_ALL}")
+        if self.results['technologies']:
+            for tech in self.results['technologies']:
+                print(f"    - {tech}")
+        else:
+            print("    None detected")
         
-        # Random vulnerabilities for demo
-        self.vulnerabilities = []
-        critical_count = random.randint(0, 2)
-        high_count = random.randint(0, 3)
-        medium_count = random.randint(0, 4)
+        print(f"\n{Fore.YELLOW}[+] OPEN PORTS:{Style.RESET_ALL}")
+        if self.results['open_ports']:
+            for port, service in self.results['open_ports']:
+                print(f"    - Port {port}: {service}")
+        else:
+            print("    No open ports found")
         
-        for _ in range(critical_count):
-            vuln = random.choice(VULN_DB["CRITICAL"])
-            self.vulnerabilities.append(("CRITICAL", vuln))
-            
-        for _ in range(high_count):
-            vuln = random.choice(VULN_DB["HIGH"])
-            self.vulnerabilities.append(("HIGH", vuln))
-            
-        for _ in range(medium_count):
-            vuln = random.choice(VULN_DB["MEDIUM"])
-            self.vulnerabilities.append(("MEDIUM", vuln))
-            
-    def show_vulnerabilities(self):
-        if not self.vulnerabilities:
-            print(f"\n{Fore.RED}[-] No vulnerabilities found!{Style.RESET_ALL}")
-            return False
-            
-        print(f"\n{Fore.CYAN}╔══════════════════════════════════════════════════════════╗{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{Fore.WHITE}               VULNERABILITIES FOUND                  {Fore.CYAN}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}╠══════════════════════════════════════════════════════════╣{Style.RESET_ALL}")
+        print(f"\n{Fore.YELLOW}[+] SUBDOMAINS FOUND:{Style.RESET_ALL}")
+        if self.results['subdomains']:
+            for sub in self.results['subdomains']:
+                print(f"    - {sub}")
+        else:
+            print("    No subdomains found")
         
-        for level, vuln in self.vulnerabilities:
-            if level == "CRITICAL":
-                color = Fore.RED
-                symbol = "🔴"
-            elif level == "HIGH":
-                color = Fore.YELLOW
-                symbol = "🟠"
-            else:
-                color = Fore.GREEN
-                symbol = "🟡"
-                
-            print(f"{Fore.CYAN}║{color} {symbol} {vuln:<50}{Fore.CYAN}║{Style.RESET_ALL}")
-            
-        print(f"{Fore.CYAN}╚══════════════════════════════════════════════════════════╝{Style.RESET_ALL}")
-        return True
+        print(f"\n{Fore.YELLOW}[+] DIRECTORIES FOUND:{Style.RESET_ALL}")
+        if self.results['directories']:
+            for url, status in self.results['directories'][:10]:  # Show first 10
+                print(f"    - {url} ({status})")
+            if len(self.results['directories']) > 10:
+                print(f"    ... and {len(self.results['directories']) - 10} more")
+        else:
+            print("    No directories found")
         
-    def exploit_vulnerabilities(self):
-        print(f"\n{Fore.CYAN}[*] Starting exploitation phase...{Style.RESET_ALL}")
+        print(f"\n{Fore.YELLOW}[+] VULNERABILITIES FOUND:{Style.RESET_ALL}")
+        if self.results['vulnerabilities']:
+            for i, vuln in enumerate(self.results['vulnerabilities'], 1):
+                print(f"    {i}. {vuln}")
+        else:
+            print(f"    {Fore.GREEN}No vulnerabilities found{Style.RESET_ALL}")
         
-        for level, vuln in self.vulnerabilities:
-            if level == "CRITICAL":
-                print(f"\n{Fore.RED}[🔥] Exploiting CRITICAL: {vuln}{Style.RESET_ALL}")
-                self.exploit_critical(vuln)
-            elif level == "HIGH":
-                print(f"\n{Fore.YELLOW}[⚡] Exploiting HIGH: {vuln}{Style.RESET_ALL}")
-                self.exploit_high(vuln)
-                
-    def exploit_critical(self, vuln):
-        time.sleep(1)
-        
-        if "SQL Injection" in vuln:
-            print(f"{Fore.GREEN}[+] Dumping database...{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}[+] Admin credentials found: admin / password123{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}[+] Web shell uploaded: {self.target}/shell.php{Style.RESET_ALL}")
-            
-        elif "RCE" in vuln:
-            print(f"{Fore.GREEN}[+] Reverse shell established{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}[+] Running commands on target...{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}[+] whoami: www-data{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}[+] pwd: /var/www/html{Style.RESET_ALL}")
-            
-        elif "File Upload" in vuln:
-            print(f"{Fore.GREEN}[+] Bypassing file upload filters...{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}[+] Shell uploaded: {self.target}/uploads/cmd.php{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}[+] Command execution successful{Style.RESET_ALL}")
-            
-    def exploit_high(self, vuln):
-        time.sleep(0.5)
-        
-        if "XSS" in vuln:
-            print(f"{Fore.GREEN}[+] Injecting XSS payload...{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}[+] Cookie stealer deployed{Style.RESET_ALL}")
-            
-        elif "Directory Traversal" in vuln:
-            print(f"{Fore.GREEN}[+] Reading sensitive files...{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}[+] Found: /etc/passwd{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}[+] Found: config.php{Style.RESET_ALL}")
-            
-    def generate_report(self):
-        print(f"\n{Fore.CYAN}[*] Generating report...{Style.RESET_ALL}")
-        
-        report = f"""
-{'='*60}
-WebRipper Pro Scan Report
-{'='*60}
-Target: {self.target}
-Service: {self.service_type}
-Scan Time: {datetime.now()}
-{'='*60}
-
-VULNERABILITIES FOUND:
-{'='*60}
-"""
-        
-        for level, vuln in self.vulnerabilities:
-            report += f"[{level}] {vuln}\n"
-            
-        report += f"""
-{'='*60}
-EXPLOITATION RESULTS:
-{'='*60}
-"""
-        
-        if any(level == "CRITICAL" for level, _ in self.vulnerabilities):
-            report += "✅ CRITICAL vulnerabilities exploited successfully\n"
-            report += f"🔗 Web Shell: {self.target}/shell.php\n"
-            report += "🔑 Admin Access: admin / password123\n"
-            report += "💾 Database: Dumped (2.5GB data)\n"
-            
-        report += f"""
-{'='*60}
-RECOMMENDED NEXT STEPS:
-{'='*60}
-1. Maintain access via backdoor
-2. Exfiltrate sensitive data
-3. Cover tracks
-4. Lateral movement
-{'='*60}
-"""
-        
-        # Save report
-        filename = f"report_{self.target.replace('://', '_').replace('/', '_')}_{int(time.time())}.txt"
+        # Save report to file
+        filename = f"scan_report_{self.hostname}_{int(time.time())}.json"
         with open(filename, 'w') as f:
-            f.write(report)
+            json.dump(report, f, indent=4)        print(f"\n{Fore.GREEN}[+] Report saved to: {filename}{Style.RESET_ALL}")
+        
+        # Also save a text summary
+        txt_filename = f"scan_summary_{self.hostname}_{int(time.time())}.txt"
+        with open(txt_filename, 'w') as f:
+            f.write(f"WebRipper Pro Scan Report\n")
+            f.write(f"{'='*60}\n")
+            f.write(f"Target: {self.target}\n")
+            f.write(f"Scan Time: {time.ctime()}\n")
+            f.write(f"{'='*60}\n\n")
             
-        print(f"{Fore.GREEN}[+] Report saved as: {filename}{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}[!] Check the file for complete details{Style.RESET_ALL}")
-        
-    def mass_attack_mode(self):
-        print(f"\n{Fore.RED}[💀] MASS ATTACK MODE ACTIVATED{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}[!] Enter multiple targets (comma separated):{Style.RESET_ALL}")
-        targets = input(f"{Fore.GREEN}>>> {Style.RESET_ALL}").strip().split(',')
-        
-        for target in targets:
-            target = target.strip()
-            if target:
-                print(f"\n{Fore.CYAN}[*] Attacking: {target}{Style.RESET_ALL}")
-                self.target = target
-                self.scan_target()
-                self.show_vulnerabilities()
-                self.exploit_vulnerabilities()
-                time.sleep(1)
-                
-    def run(self):
-        self.print_banner()
-        
-        while True:
-            self.show_menu()
+            f.write("VULNERABILITIES:\n")
+            f.write("-" * 40 + "\n")
+            for vuln in self.results['vulnerabilities']:
+                f.write(f"• {vuln}\n")
             
-            try:
-                choice = int(input(f"\n{Fore.GREEN}[?] Select option (0-9): {Style.RESET_ALL}"))
-                
-                if choice == 0:
-                    print(f"\n{Fore.YELLOW}[!] Exiting WebRipper Pro...{Style.RESET_ALL}")
-                    sys.exit(0)
-                    
-                elif choice == 9:
-                    self.mass_attack_mode()
-                    continue
-                    
-                elif 1 <= choice <= 8:
-                    if self.service_selection(choice):
-                        self.get_target()
-                        self.scan_target()
-                        
-                        if self.show_vulnerabilities():
-                            print(f"\n{Fore.CYAN}[?] Start exploitation? (y/n):{Style.RESET_ALL}")
-                            if input(f"{Fore.GREEN}>>> {Style.RESET_ALL}").lower() == 'y':
-                                self.exploit_vulnerabilities()
-                                self.generate_report()
-                                
-                        print(f"\n{Fore.CYAN}[?] Attack another target? (y/n):{Style.RESET_ALL}")
-                        if input(f"{Fore.GREEN}>>> {Style.RESET_ALL}").lower() != 'y':
-                            break
-                            
-                else:
-                    print(f"{Fore.RED}[-] Invalid option!{Style.RESET_ALL}")
-                    
-            except ValueError:
-                print(f"{Fore.RED}[-] Please enter a number!{Style.RESET_ALL}")
-            except KeyboardInterrupt:
-                print(f"\n{Fore.YELLOW}[!] Operation cancelled by user{Style.RESET_ALL}")
-                break
-            except Exception as e:
-                print(f"{Fore.RED}[-] Error: {e}{Style.RESET_ALL}")
+            f.write("\nRECOMMENDATIONS:\n")
+            f.write("-" * 40 + "\n")
+            if self.results['vulnerabilities']:
+                f.write("1. Fix exposed configuration files\n")
+                f.write("2. Implement proper input validation\n")
+                f.write("3. Disable directory listing\n")
+                f.write("4. Update software components\n")
+                f.write("5. Implement WAF rules\n")
+            else:
+                f.write("No immediate security issues found.\n")
+                f.write("Consider regular security audits.\n")
+        
+        print(f"{Fore.GREEN}[+] Text summary saved to: {txt_filename}{Style.RESET_ALL}")
+        
+        return filename
+    
+    def run_full_scan(self):
+        """ফুল স্ক্যান রান"""
+        print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}[*] STARTING COMPREHENSIVE SECURITY SCAN{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}[*] Target: {self.target}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
+        
+        start_time = time.time()
+        
+        # Step 1: Basic connectivity check
+        print(f"\n{Fore.CYAN}[1/7] Checking connectivity...{Style.RESET_ALL}")
+        try:
+            response = requests.get(self.target, timeout=10, verify=False)
+            if response.status_code != 200:
+                print(f"{Fore.YELLOW}[!] Site returned status: {response.status_code}{Style.RESET_ALL}")
+        except Exception as e:
+            print(f"{Fore.RED}[-] Cannot connect to target: {e}{Style.RESET_ALL}")
+            return False
+        
+        # Step 2: Get server info
+        print(f"\n{Fore.CYAN}[2/7] Gathering server information...{Style.RESET_ALL}")
+        self.get_server_info()
+        
+        # Step 3: Port scan
+        print(f"\n{Fore.CYAN}[3/7] Scanning ports...{Style.RESET_ALL}")
+        self.port_scan()
+        
+        # Step 4: Subdomain enumeration
+        print(f"\n{Fore.CYAN}[4/7] Enumerating subdomains...{Style.RESET_ALL}")
+        self.find_subdomains()
+        
+        # Step 5: Directory enumeration
+        print(f"\n{Fore.CYAN}[5/7] Enumerating directories...{Style.RESET_ALL}")
+        self.directory_enumeration()
+        
+        # Step 6: Vulnerability check
+        print(f"\n{Fore.CYAN}[6/7] Checking for vulnerabilities...{Style.RESET_ALL}")
+        self.check_vulnerabilities()
+        
+        # Step 7: External tools
+        print(f"\n{Fore.CYAN}[7/7] Running external tools...{Style.RESET_ALL}")
+        self.run_external_tools()
+        
+        # Generate report
+        print(f"\n{Fore.CYAN}[*] Generating final report...{Style.RESET_ALL}")
+        self.generate_report()
+        
+        elapsed_time = time.time() - start_time
+        print(f"\n{Fore.GREEN}[+] Scan completed in {elapsed_time:.2f} seconds{Style.RESET_ALL}")
+        
+        return True
 
 def main():
-    try:
-        # Check if running as root (for Kali Linux)
-        if os.name == 'posix' and os.geteuid() != 0:
-            print(f"{Fore.RED}[!] Warning: Running without root privileges{Style.RESET_ALL}")
-            print(f"{Fore.YELLOW}[!] Some features may not work properly{Style.RESET_ALL}")
-            time.sleep(2)
-        
-        # Check dependencies
-        print(f"{Fore.CYAN}[*] Checking dependencies...{Style.RESET_ALL}")
-        required_tools = ['nmap', 'sqlmap', 'nikto', 'gobuster']
-        missing = []
-        
-        for tool in required_tools:
-            try:
-                subprocess.run(['which', tool], capture_output=True, check=True)
-            except:
-                missing.append(tool)
-        
-        if missing:
-            print(f"{Fore.YELLOW}[!] Missing tools: {', '.join(missing)}{Style.RESET_ALL}")
-            print(f"{Fore.YELLOW}[!] Run ./install.sh to install dependencies{Style.RESET_ALL}")
-            time.sleep(2)
-        
-        # Start WebRipper Pro
-        tool = WebRipperPro()
-        tool.run()
-        
-    except KeyboardInterrupt:
-        print(f"\n{Fore.YELLOW}[!] Exiting...{Style.RESET_ALL}")
+    """মেইন ফাংশন"""
+    print(f"{Fore.RED}")
+    print("╔══════════════════════════════════════════════════════════╗")
+    print("║                 WebRipper Pro v4.0 - REAL                ║")
+    print("║           Comprehensive Security Scanner                 ║")
+    print("║           For Educational Purposes Only!                ║")
+    print("╚══════════════════════════════════════════════════════════╝")
+    print(f"{Style.RESET_ALL}")
+    
+    print(f"{Fore.YELLOW}[!] LEGAL DISCLAIMER:{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}[!] This tool is for security testing ONLY{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}[!] Use only on systems you own or have permission to test{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}[!] Unauthorized access is illegal and punishable by law{Style.RESET_ALL}")
+    
+    consent = input(f"\n{Fore.CYAN}[?] Do you agree to use this tool legally? (y/n): {Style.RESET_ALL}")
+    if consent.lower() != 'y':
+        print(f"{Fore.RED}[-] Exiting...{Style.RESET_ALL}")
         sys.exit(0)
-    except Exception as e:
-        print(f"{Fore.RED}[!] Fatal error: {e}{Style.RESET_ALL}")
-        sys.exit(1)
+    
+    target = input(f"\n{Fore.CYAN}[*] Enter target URL (e.g., http://example.com): {Style.RESET_ALL}")
+    
+    if not target.startswith(('http://', 'https://')):
+        target = 'http://' + target
+    
+    print(f"\n{Fore.CYAN}[*] Starting scan on: {target}{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}[*] This may take 2-3 minutes...{Style.RESET_ALL}")
+    
+    scanner = RealHackingTool(target)
+    scanner.run_full_scan()
+    
+    print(f"\n{Fore.GREEN}[+] Scan completed successfully!{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW}[!] Remember: Use findings responsibly for security improvement{Style.RESET_ALL}")
 
 if __name__ == "__main__":
-    # Parse command line arguments
-    parser = argparse.ArgumentParser(description='WebRipper Pro - Ultimate Web Hacking Tool')
-    parser.add_argument('-t', '--target', help='Target URL')
-    parser.add_argument('-s', '--service', type=int, choices=range(1, 9), help='Service type (1-8)')
-    parser.add_argument('-m', '--mass', help='Mass attack targets file')
-    parser.add_argument('--auto', action='store_true', help='Auto-exploit mode')
-    
-    args = parser.parse_args()
-    
-    # If command line arguments provided
-    if args.target and args.service:
-        tool = WebRipperPro()
-        tool.print_banner()
-        
-        if tool.service_selection(args.service):
-            tool.target = args.target
-            tool.scan_target()
-            tool.show_vulnerabilities()
-            
-            if args.auto or tool.vulnerabilities:
-                tool.exploit_vulnerabilities()
-                tool.generate_report()
-    elif args.mass:
-        tool = WebRipperPro()
-        tool.print_banner()
-        
-        try:
-            with open(args.mass, 'r') as f:
-                targets = [line.strip() for line in f if line.strip()]
-            
-            for target in targets:
-                print(f"\n{Fore.CYAN}[*] Attacking: {target}{Style.RESET_ALL}")
-                tool.target = target
-                tool.scan_target()
-                tool.show_vulnerabilities()
-                
-                if args.auto or tool.vulnerabilities:
-                    tool.exploit_vulnerabilities()
-                
-                time.sleep(1)
-        except FileNotFoundError:
-            print(f"{Fore.RED}[-] File not found: {args.mass}{Style.RESET_ALL}")
-    else:
-        # Run interactive mode
+    try:
         main()
+    except KeyboardInterrupt:
+        print(f"\n{Fore.YELLOW}[!] Scan interrupted by user{Style.RESET_ALL}")
+        sys.exit(0)
+    except Exception as e:
+        print(f"{Fore.RED}[!] Error: {e}{Style.RESET_ALL}")
+        sys.exit(1)
