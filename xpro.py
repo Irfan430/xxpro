@@ -380,11 +380,11 @@ class RealHackingTool:
         else:
             print(f"    {Fore.GREEN}No vulnerabilities found{Style.RESET_ALL}")
         
-              # Save report to file
+         # Save report to file
         filename = f"scan_report_{self.hostname}_{int(time.time())}.json"
         with open(filename, 'w') as f:
             json.dump(report, f, indent=4)
-        print(f"\n{Fore.GREEN}[+] Report saved to: {filename}{Style.RESET_ALL}")      print(f"\n{Fore.GREEN}[+] Report saved to: {filename}{Style.RESET_ALL}")
+        print(f"\n{Fore.GREEN}[+] Report saved to: {filename}{Style.RESET_ALL}")
         
         # Also save a text summary
         txt_filename = f"scan_summary_{self.hostname}_{int(time.time())}.txt"
