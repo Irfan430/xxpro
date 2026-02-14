@@ -345,7 +345,7 @@ RECOMMENDED NEXT STEPS:
                     
             except ValueError:
                 print(f"{Fore.RED}[-] Please enter a number!{Style.RESET_ALL}")
-            except KeyboardInterrupt:```python
+            except KeyboardInterrupt:
                 print(f"\n{Fore.YELLOW}[!] Operation cancelled by user{Style.RESET_ALL}")
                 break
             except Exception as e:
